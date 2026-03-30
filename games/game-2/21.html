@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Очко 21: Infinite Deluxe</title>
+    <link href="https://fonts.googleapis.com" rel="stylesheet">
+    <style>
+        :root {
+            --gold-btn: linear-gradient(135deg, #ffcc33 0%, #d4a017 100%);
+            --glass: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+            --table-color: #1a4d2e;
+            --shirt-color: #1a3a5d;
+        }
+
+        body {
+            margin: 0; font-family: 'Montserrat', sans-serif;
+            background: radial-gradient(circle at center, #111 0%, #050505 100%);
+            height: 100vh; display: flex; justify-content: center; align-items: flex-start;
+            color: white; overflow: hidden; padding-top: 40px;
+        }
+
+        #table {
+            width: 1000px; height: 580px;
+            background: radial-gradient(circle, var(--table-color) 0%, #000 100%);
+            border: 12px solid #2e1d13; border-radius: 250px;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.9), inset 0 0 80px rgba(0,0,0,0.7);
+            display: flex; flex-direction: column; justify-content: space-between;
+            padding: 50px; position: relative; transition: background 0.4s;
+        }
+
+        .side-panel { position: absolute; left: 40px; top: 40px; display: flex; flex-direction: column; gap: 20px; z-index: 100; }
+        .hud-balance { position: absolute; right: 40px; top: 40px; text-align: right; z-index: 100; }
+        .panel { background: var(--glass); backdrop-filter: blur(15px); border: 1px solid var(--border); border-radius: 25px; padding: 20px; width: 220px; box-sizing: border-box; }
+        .balance-val { color: #ffcc33; font-size: 2.4rem; font-weight: 900; line-height: 1; }
+
+        .card-slot { display: flex; gap: 15px; min-height: 150px; justify-content: center; align-items: center; }
+        .card {
+            width: 105px; height: 150px; background: #fff; color: #000; border-radius: 8px;
+            display: flex; flex-direction: column; justify-content: space-between;
+            font-weight: 700; box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+            position: relative; animation: cardDeal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            box-sizing: border-box; padding: 8px; border: 1px solid #ccc;
+        }
+
+        .card .index { font-size: 1.1rem; line-height: 1; display: flex; flex-direction: column; align-items: center; width: min-content; }
+        .card .index.top { align-self: flex-start; }
+        .card .index.bottom { align-self: flex-end; transform: rotate(180deg); }
+        .card .suit-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 3.5rem; opacity: 0.08; pointer-events: none; }
+
+        .card.hidden { 
+            background: var(--shirt-color); 
+            background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 2px, transparent 2px, transparent 10px);
+            border: 5px solid #fff;
+        }
+        .card.hidden * { display: none; }
+
+        @keyframes cardDeal {
+            from { transform: translate(400px, -200px) rotate(45deg); opacity: 0; }
+            to { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+        }
+
+        .red { color: #e74c3c; }
+        .score-label { opacity: 0.3; font-size: 0.7rem; font-weight: 900; text-transform: uppercase; margin: 5px 0; }
+
+        .controls { position: absolute; bottom: -120px; left: 50%; transform: translateX(-50%); display: flex; gap: 30px; align-items: center; }
+        .btn {
+            background: var(--gold-btn); border: none; padding: 20px 55px; border-radius: 50px;
+            color: #000; font-weight: 900; cursor: pointer; transition: 0.3s; text-transform: uppercase;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); font-size: 1rem;
+        }
+        .btn:hover:not(:disabled) { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(212,160,23,0.5); }
+        .btn:disabled { background: #333; color: #666; cursor: not-allowed; }
+
+        input[type="number"] { background: #000; border: 2px solid #d4a017; color: #ffcc33; padding: 15px; border-radius: 40px; width: 110px; text-align: center; font-size: 1.3rem; font-weight: 900; outline: none; }
+
+        .dot-group { display: flex; gap: 10px; margin-top: 5px; margin-bottom: 15px; }
+        .dot { width: 25px; height: 25px; border-radius: 50%; border: 2px solid white; cursor: pointer; transition: 0.2s; }
+
+        #status-msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 6rem; font-weight: 900; z-index: 100; text-shadow: 0 10px 40px #000; pointer-events: none; display: none; }
+        .confetti { position: absolute; width: 8px; height: 8px; z-index: 1001; pointer-events: none; }
+        #music-toggle { position: absolute; bottom: 20px; right: 20px; font-size: 0.7rem; opacity: 0.5; cursor: pointer; border: 1px solid var(--border); padding: 5px 10px; border-radius: 10px; }
+        #reset-storage { position: absolute; bottom: 20px; left: 20px; font-size: 0.6rem; opacity: 0.3; cursor: pointer; text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <div class="side-panel">
+        <div class="panel">
+            <div style="font-size: 0.6rem; opacity: 0.5; margin-bottom: 5px; letter-spacing: 1px;">НАСТРОЙКИ</div>
+            <div style="font-size: 0.7rem; margin-top: 10px;">Стол:</div>
+            <div class="dot-group">
+                <div class="dot" onclick="setT('#1a4d2e')" style="background:#1a4d2e;"></div>
+                <div class="dot" onclick="setT('#1a2b4d')" style="background:#1a2b4d;"></div>
+                <div class="dot" onclick="setT('#4d1a1a')" style="background:#4d1a1a;"></div>
+            </div>
+            <div style="font-size: 0.7rem;">Рубашка:</div>
+            <div class="dot-group">
+                <div class="dot" onclick="setS('#1a3a5d')" style="background:#1a3a5d;"></div>
+                <div class="dot" onclick="setS('#7c1a1a')" style="background:#7c1a1a;"></div>
+                <div class="dot" onclick="setS('#111')" style="background:#111;"></div>
+            </div>
+        </div>
+        <div class="panel">
+            <div style="font-size: 0.6rem; opacity: 0.5; margin-bottom: 8px; letter-spacing: 1px;">ИСТОРИЯ</div>
+            <div id="log" style="font-size: 0.8rem; line-height: 1.6; opacity: 0.8;">История пуста...</div>
+        </div>
+    </div>
+
+    <div class="hud-balance">
+        <div class="balance-val"><span id="balance">1000</span>$</div>
+        <div style="opacity: 0.4; font-weight: 900; font-size: 0.9rem; margin-top: 5px;">СТАВКА: <span id="cur-bet">0</span>$</div>
+    </div>
+
+    <div id="table">
+        <div id="status-msg"></div>
+        <div align="center">
+            <div class="score-label">Дилер: <span id="d-score">0</span></div>
+            <div id="d-cards" class="card-slot"></div>
+        </div>
+        <div align="center">
+            <div id="p-cards" class="card-slot"></div>
+            <div class="score-label">Вы: <span id="p-score">0</span></div>
+        </div>
+        <div class="controls">
+            <div id="bet-ui" style="display: flex; gap: 20px;">
+                <input type="number" id="bet-input" value="100">
+                <button class="btn" onclick="startPlay()">ИГРАТЬ</button>
+            </div>
+            <div id="game-ui" style="display: none; gap: 60px;">
+                <button class="btn" onclick="hit()">ЕЩЁ</button>
+                <button class="btn" id="stand-btn" onclick="stand()" disabled>ХВАТИТ</button>
+            </div>
+            <button class="btn" id="next-btn" style="display:none;" onclick="newRound()">СЛЕДУЮЩИЙ КРУГ</button>
+        </div>
+    </div>
+
+    <div id="music-toggle" onclick="toggleMusic()">МУЗЫКА: ВЫКЛ</div>
+    <div id="reset-storage" onclick="clearSave()">СБРОСИТЬ СОХРАНЕНИЕ</div>
+
+<script>
+    let bank = 1000, bet = 0, pHand = [], dHand = [], deck = [], logs = [];
+    let audioCtx, musicTimer, isMusicPlaying = false;
+
+    // ЗАГРУЗКА ДАННЫХ ПРИ СТАРТЕ
+    window.onload = () => {
+        const savedBank = localStorage.getItem('casino_bank');
+        const savedTable = localStorage.getItem('casino_table');
+        const savedShirt = localStorage.getItem('casino_shirt');
+        const savedLogs = localStorage.getItem('casino_logs');
+
+        if (savedBank !== null) bank = parseInt(savedBank);
+        if (savedTable !== null) setT(savedTable, false);
+        if (savedShirt !== null) setS(savedShirt, false);
+        if (savedLogs !== null) {
+            logs = JSON.parse(savedLogs);
+            document.getElementById('log').innerHTML = logs.join('<br>');
+        }
+        updateUI();
+    };
+
+    function saveData() {
+        localStorage.setItem('casino_bank', bank);
+        localStorage.setItem('casino_table', getComputedStyle(document.documentElement).getPropertyValue('--table-color'));
+        localStorage.setItem('casino_shirt', getComputedStyle(document.documentElement).getPropertyValue('--shirt-color'));
+        localStorage.setItem('casino_logs', JSON.stringify(logs));
+    }
+
+    function clearSave() {
+        if (confirm("Вы уверены, что хотите сбросить баланс и историю?")) {
+            localStorage.clear();
+            location.reload();
+        }
+    }
+
+    function initAudio() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    function playNote(freq, dur, startTime, vol) {
+        initAudio();
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(freq, startTime);
+        g.gain.setValueAtTime(vol, startTime);
+        g.gain.exponentialRampToValueAtTime(0.001, startTime + dur);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(startTime); o.stop(startTime + dur);
+    }
+
+    function loungeLoop() {
+        if (!isMusicPlaying) return;
+        const now = audioCtx.currentTime;
+        playNote(73.4, 1.5, now, 0.02); 
+        playNote(293, 2, now + 0.5, 0.01);
+        musicTimer = setTimeout(loungeLoop, 4000);
+    }
+
+    function toggleMusic() {
+        initAudio();
+        if (isMusicPlaying) {
+            clearTimeout(musicTimer); isMusicPlaying = false;
+            document.getElementById('music-toggle').innerText = "МУЗЫКА: ВЫКЛ";
+        } else {
+            isMusicPlaying = true; loungeLoop();
+            document.getElementById('music-toggle').innerText = "МУЗЫКА: ВКЛ";
+        }
+    }
+
+    function setT(c, sound = true) { 
+        if (sound) playNote(800, 0.05, audioCtx?.currentTime || 0, 0.02); 
+        document.documentElement.style.setProperty('--table-color', c); 
+        saveData();
+    }
+    function setS(c, sound = true) { 
+        if (sound) playNote(800, 0.05, audioCtx?.currentTime || 0, 0.02); 
+        document.documentElement.style.setProperty('--shirt-color', c); 
+        saveData();
+    }
+
+    function startPlay() {
+        initAudio();
+        let v = parseInt(document.getElementById('bet-input').value);
+        if (v > bank || v < 10) return;
+        bank -= v; bet = v; updateUI();
+        document.getElementById('bet-ui').style.display = 'none';
+        document.getElementById('game-ui').style.display = 'flex';
+        playNote(800, 0.1, audioCtx.currentTime, 0.03);
+        deck = [];
+        const ss = ['♠','♣','♥','♦'], vv = [{n:'6',v:6},{n:'7',v:7},{n:'8',v:8},{n:'9',v:9},{n:'10',v:10},{n:'В',v:2},{n:'Д',v:3},{n:'К',v:4},{n:'Т',v:11}];
+        ss.forEach(s => vv.forEach(v => deck.push({...v, s})));
+        deck.sort(() => Math.random() - 0.5);
+        saveData();
+    }
+
+    function renderCard(id, c, hidden = false) {
+        const div = document.createElement('div');
+        div.className = 'card' + (hidden ? ' hidden' : '') + (c.s==='♥'||c.s==='♦'?' red':'');
+        div.innerHTML = `
+            <div class="index top"><span>${c.n}</span><span>${c.s}</span></div>
+            <div class="suit-center">${c.s}</div>
+            <div class="index bottom"><span>${c.n}</span><span>${c.s}</span></div>
+        `;
+        document.getElementById(id).appendChild(div);
+    }
+
+    function hit() {
+        playNote(600, 0.1, audioCtx.currentTime, 0.03);
+        const c = deck.pop(); pHand.push(c);
+        renderCard('p-cards', c, false);
+        let s = pHand.reduce((a,b)=>a+b.v, 0);
+        document.getElementById('p-score').innerText = s;
+        document.getElementById('stand-btn').disabled = false;
+        if (s > 21) finish("ПЕРЕБОР!", "lose");
+        else if (s === 21) stand();
+    }
+
+    async function stand() {
+        document.getElementById('game-ui').style.display = 'none';
+        let ds = 0;
+        while (ds < 17) {
+            playNote(400, 0.1, audioCtx.currentTime, 0.03);
+            const c = deck.pop(); dHand.push(c);
+            renderCard('d-cards', c, true);
+            ds = dHand.reduce((a,b)=>a+b.v, 0);
+            await new Promise(r => setTimeout(r, 600));
+        }
+        document.querySelectorAll('#d-cards .card').forEach(el => el.classList.remove('hidden'));
+        document.getElementById('d-score').innerText = ds;
+        let ps = pHand.reduce((a,b)=>a+b.v, 0);
+        if (ds > 21 || ps > ds) finish("ПОБЕДА!", "win");
+        else if (ds > ps) finish("ПРОИГРЫШ", "lose");
+        else finish("НИЧЬЯ", "draw");
+    }
+
+    function finish(t, r) {
+        document.getElementById('game-ui').style.display = 'none';
+        const m = document.getElementById('status-msg');
+        m.innerText = t; m.style.display = 'block';
+        m.style.color = r==='win'?'#2ecc71':(r==='lose'?'#ff4444':'#f1c40f');
+        if (r === 'win') { bank += bet * 2; spawnConfetti(bet); playNote(523, 0.5, audioCtx.currentTime, 0.04); }
+        else if (r === 'draw') { bank += bet; playNote(440, 0.1, audioCtx.currentTime, 0.03); }
+        else { playNote(330, 0.5, audioCtx.currentTime, 0.04); }
+        logs.unshift(`${r==='win'?'✅':r==='lose'?'❌':'🤝'} ${bet}$`);
+        if (logs.length > 6) logs.pop();
+        document.getElementById('log').innerHTML = logs.join('<br>');
+        updateUI();
+        document.getElementById('next-btn').style.display = 'block';
+        saveData();
+    }
+
+    function newRound() {
+        pHand = []; dHand = [];
+        document.getElementById('p-cards').innerHTML = '';
+        document.getElementById('d-cards').innerHTML = '';
+        document.getElementById('p-score').innerText = '0';
+        document.getElementById('d-score').innerText = '0';
+        document.getElementById('status-msg').style.display = 'none';
+        document.getElementById('next-btn').style.display = 'none';
+        document.getElementById('bet-ui').style.display = 'flex';
+        document.getElementById('stand-btn').disabled = true;
+        if (bank < 10) bank = 500; updateUI();
+        saveData();
+    }
+
+    function updateUI() {
+        document.getElementById('balance').innerText = bank;
+        document.getElementById('cur-bet').innerText = bet;
+    }
+
+    function spawnConfetti(count) {
+        for(let i=0; i<Math.min(count/2, 150); i++) {
+            const c = document.createElement('div'); c.className = 'confetti';
+            c.style.backgroundColor = ['#ffcc33','#2ecc71','#e74c3c','#3498db'][Math.floor(Math.random()*4)];
+            document.body.appendChild(c); c.style.left = Math.random()*100+'vw'; c.style.top = '-10px';
+            c.animate([{transform:'translateY(0)',opacity:1},{transform:`translateY(100vh) rotate(720deg)`,opacity:0}], {duration:2000+Math.random()*2000}).onfinish=()=>c.remove();
+        }
+    }
+</script>
+</body>
+</html>
