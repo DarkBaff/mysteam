@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>DARK Music | FL Studio Style Studio + Яндекс Музыка UI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', 'Roboto', sans-serif;
+        }
+
+        body {
+            background: #0a0a0f;
+            color: #eef5ff;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* основной layout как в Яндекс Музыке + FL Studio */
+        .app-layout {
+            display: flex;
+            height: 100vh;
+            width: 100%;
+        }
+
+        /* ЛЕВАЯ ПАНЕЛЬ НАВИГАЦИИ */
+        .sidebar {
+            width: 280px;
+            background: rgba(8, 6, 15, 0.95);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(168, 85, 247, 0.3);
+            padding: 1.5rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        .logo-area h1 {
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, #c084fc, #a855f7);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -1px;
+        }
+        .logo-area p {
+            font-size: 0.7rem;
+            color: #8a7aa8;
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .nav-item {
+            background: transparent;
+            border: none;
+            color: #bfb9df;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-size: 1rem;
+            font-weight: 500;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .nav-item i { font-style: normal; font-size: 1.3rem; }
+        .nav-item.active {
+            background: #2a1a45;
+            color: #e0aaff;
+            box-shadow: 0 0 8px rgba(168,85,247,0.3);
+        }
+        .nav-item:hover:not(.active) {
+            background: #1e172f;
+        }
+
+        /* ОСНОВНОЙ КОНТЕНТ */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem 2rem;
+            background: radial-gradient(circle at 30% 20%, #0c0c14, #030304);
+        }
+
+        /* секции */
+        .page {
+            display: none;
+            animation: fadeIn 0.25s ease;
+        }
+        .page.active-page {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+
+        /* сетка треков */
+        .tracks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.2rem;
+        }
+        .track-card {
+            background: rgba(20, 15, 38, 0.7);
+            backdrop-filter: blur(8px);
+            border-radius: 1.2rem;
+            padding: 1rem;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            transition: 0.2s;
+            position: relative;
+        }
+        .track-card:hover {
+            transform: translateY(-4px);
+            border-color: #c084fc;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+        }
+        .track-cover {
+            width: 100%;
+            aspect-ratio: 1;
+            background: linear-gradient(145deg, #2e1a48, #130b20);
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin-bottom: 0.8rem;
+            object-fit: cover;
+        }
+        .track-title {
+            font-weight: bold;
+            font-size: 1rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .track-artist {
+            font-size: 0.75rem;
+            color: #b9a6e0;
+        }
+        .audio-player {
+            width: 100%;
+            margin-top: 0.5rem;
+            border-radius: 30px;
+            height: 36px;
+        }
+        .like-btn {
+            background: none;
+            border: none;
+            color: #b96eff;
+            font-size: 1.3rem;
+            cursor: pointer;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border-radius: 40px;
+            transition: 0.1s;
+        }
+        .like-btn.liked {
+            color: #ff4d6d;
+            text-shadow: 0 0 4px #ff4d6d;
+        }
+        .delete-track {
+            background: #2f1d44;
+            border: none;
+            color: #ffb7b7;
+            padding: 4px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            width: 100%;
+            margin-top: 6px;
+            cursor: pointer;
+        }
+
+        /* секция студии (FL STYLE) */
+        .fl-studio-panel {
+            background: #0c0a18d9;
+            border-radius: 28px;
+            padding: 1.5rem;
+            border: 1px solid #4a3a6e;
+        }
+        .channel-rack {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin: 1.5rem 0;
+        }
+        .fl-pad {
+            background: #1f1933;
+            width: 85px;
+            height: 85px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.05s linear;
+            box-shadow: 0 5px 0 #0f0b1a;
+            font-weight: bold;
+        }
+        .fl-pad:active {
+            transform: translateY(3px);
+            box-shadow: none;
+        }
+        .step-seq {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+        .step-btn {
+            width: 40px;
+            height: 40px;
+            background: #1f1a2e;
+            border-radius: 8px;
+            text-align: center;
+            line-height: 40px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .step-active {
+            background: #a855f7;
+            box-shadow: 0 0 8px #c084fc;
+        }
+        .control-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 1rem 0;
+        }
+        button {
+            background: #8b5cf6;
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button.small {
+            padding: 0.3rem 0.8rem;
+            font-size: 0.8rem;
+        }
+        .sample-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 12px 0;
+        }
+        .sample-chip {
+            background: #2a1a44;
+            border-radius: 40px;
+            padding: 4px 12px;
+            font-size: 0.8rem;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        h3 {
+            margin: 1rem 0 0.5rem;
+            color: #d6b8ff;
+        }
+        hr {
+            border-color: #2e2352;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+<div class="app-layout">
+    <!-- Левая панель как в Яндекс Музыке -->
+    <div class="sidebar">
+        <div class="logo-area">
+            <h1>◢ DARK Music</h1>
+            <p>тёмная сторона звука</p>
+        </div>
+        <div class="nav-menu">
+            <button class="nav-item active" data-page="home">
+                <i>🏠</i> Главная
+            </button>
+            <button class="nav-item" data-page="mywave">
+                <i>🌊</i> Моя волна
+            </button>
+            <button class="nav-item" data-page="popular">
+                <i>🔥</i> Популярное
+            </button>
+            <button class="nav-item" data-page="likes">
+                <i>❤️</i> Лайки
+            </button>
+            <button class="nav-item" data-page="studio">
+                <i>🎛️</i> DARK Studio (FL Style)
+            </button>
+            <button class="nav-item" data-page="upload">
+                <i>📤</i> Загрузить трек
+            </button>
+        </div>
+    </div>
+
+    <!-- Основная область -->
+    <div class="main-content">
+        <!-- ГЛАВНАЯ (как яндекс музыка: приветствие и подборки) -->
+        <div id="homePage" class="page active-page">
+            <h2>Добро пожаловать в тёмную вселенную 🎧</h2>
+            <p style="margin-bottom: 1rem;">Слушай музыку, создавай биты как в FL Studio</p>
+            <div id="homeFeatured" style="margin: 1rem 0;">
+                <h3>⭐ Рекомендации дня</h3>
+                <div class="tracks-grid" id="homeGrid"></div>
+            </div>
+        </div>
+
+        <!-- МОЯ ВОЛНА (случайные треки от всех авторов) -->
+        <div id="mywavePage" class="page">
+            <h2>🌊 Моя волна</h2>
+            <p>Случайная подборка треков от всех авторов — обновляется каждый раз</p>
+            <button id="refreshWaveBtn" style="margin: 10px 0;">🔄 Обновить волну</button>
+            <div class="tracks-grid" id="waveGrid"></div>
+        </div>
+
+        <!-- ПОПУЛЯРНОЕ -->
+        <div id="popularPage" class="page">
+            <h2>🔥 Популярные треки</h2>
+            <p>Топ треков по количеству прослушиваний (симуляция)</p>
+            <div class="tracks-grid" id="popularGrid"></div>
+        </div>
+
+        <!-- ЛАЙКИ -->
+        <div id="likesPage" class="page">
+            <h2>❤️ Понравившиеся треки</h2>
+            <p>Твоя коллекция любимых песен</p>
+            <div class="tracks-grid" id="likesGrid"></div>
+        </div>
+
+        <!-- DARK Studio в стиле FL Studio -->
+        <div id="studioPage" class="page">
+            <div class="fl-studio-panel">
+                <h2>🎛️ DARK Studio — FL Studio Mode</h2>
+                <p>Драм-машина, паттерны, запись звука, библиотека сэмплов</p>
+
+                <!-- Step Sequencer (как в FL) -->
+                <h3>🥁 Step Sequencer (4 звука, 8 шагов)</h3>
+                <div id="stepSequencerContainer"></div>
+                <div class="control-buttons">
+                    <button id="playStepPattern">▶ Воспроизвести паттерн</button>
+                    <button id="stopStepPattern">⏹️ Стоп</button>
+                    <button id="clearStepPattern">🗑️ Очистить паттерн</button>
+                    <span>BPM: <input type="number" id="flBpm" value="128" style="width: 70px;"></span>
+                </div>
+
+                <!-- Pad барабанщика -->
+                <h3>🎧 Drum Pads (нажми для звука)</h3>
+                <div class="channel-rack">
+                    <div class="fl-pad" data-sound="kick">🥁 KICK</div>
+                    <div class="fl-pad" data-sound="snare">🥁 SNARE</div>
+                    <div class="fl-pad" data-sound="hat">🔔 HAT</div>
+                    <div class="fl-pad" data-sound="clap">👏 CLAP</div>
+                    <div class="fl-pad" data-sound="openhat">🎵 OPEN HAT</div>
+                </div>
+
+                <!-- Запись голоса -->
+                <h3>🎙️ Запись вокала / звуков</h3>
+                <div class="control-buttons">
+                    <button id="flStartRecord">🔴 Начать запись</button>
+                    <button id="flStopRecord">⏹️ Остановить</button>
+                    <button id="flPlayVoice">▶ Предпрослушать</button>
+                    <button id="flSaveVoiceLib">💾 Сохранить в библиотеку</button>
+                </div>
+                <div id="flVoiceStatus">🎤 Готов к записи</div>
+
+                <!-- Библиотека сэмплов -->
+                <h3>📁 Библиотека звуков (свои сэмплы)</h3>
+                <input type="file" id="flSampleUpload" accept="audio/*">
+                <button id="flAddSampleBtn" class="small">➕ Добавить звук</button>
+                <div id="flSampleLibraryList" class="sample-row"></div>
+
+                <!-- Создание альбома/песни с обложкой -->
+                <hr>
+                <h3>🎨 Создать трек / альбом (в медиатеку)</h3>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <input type="text" id="newTrackTitle" placeholder="Название" value="FL Studio хит">
+                    <input type="text" id="newTrackArtist" placeholder="Исполнитель" value="DARK Producer">
+                    <input type="text" id="newTrackAlbum" placeholder="Альбом">
+                    <input type="text" id="newTrackCover" placeholder="Обложка (эмодзи/url)" value="🎹">
+                    <button id="flCreateTrackBtn">✨ Создать трек</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Загрузка трека отдельно -->
+        <div id="uploadPage" class="page">
+            <div class="fl-studio-panel">
+                <h2>📤 Загрузить свой трек</h2>
+                <input type="text" id="uploadTitle" placeholder="Название трека">
+                <input type="text" id="uploadArtist" placeholder="Исполнитель">
+                <input type="text" id="uploadAlbum" placeholder="Альбом">
+                <input type="text" id="uploadCover" placeholder="Обложка (эмодзи или URL)" value="🎵">
+                <input type="file" id="uploadAudioFile" accept="audio/*">
+                <button id="doUploadTrack" style="margin-top: 12px;">✅ Сохранить трек</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --------------------------------------------------------------
+    // ГЛОБАЛЬНЫЕ ДАННЫЕ
+    let tracks = [];          // { id, title, artist, album, cover, audioDataUrl, likes, playCount }
+    let likedTrackIds = new Set();  // лайкнутые ID
+    let sampleLibrary = [];   // { id, name, audioDataUrl }
+
+    // FL Studio step sequencer данные
+    let stepPattern = {
+        kick: [0,0,0,0,0,0,0,0],
+        snare: [0,0,0,0,0,0,0,0],
+        hat: [0,0,0,0,0,0,0,0],
+        clap: [0,0,0,0,0,0,0,0]
+    };
+    let isPlayingPattern = false;
+    let patternInterval = null;
+    let currentStep = 0;
+
+    // Для записи голоса
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let recordedBlob = null;
+    let audioCtx = null;
+
+    // Инициализация аудио контекста
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    // Воспроизведение звука драм-машины (синтез)
+    function playDrumSound(soundType) {
+        if (!audioCtx) return;
+        const now = audioCtx.currentTime;
+        const gain = audioCtx.createGain();
+        gain.connect(audioCtx.destination);
+        if (soundType === 'kick') {
+            const osc = audioCtx.createOscillator();
+            osc.type = 'sine';
+            osc.frequency.value = 55;
+            gain.gain.setValueAtTime(0.6, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+            osc.connect(gain);
+            osc.start();
+            osc.stop(now + 0.5);
+        } else if (soundType === 'snare') {
+            const noise = audioCtx.createBufferSource();
+            const bufferSize = audioCtx.sampleRate * 0.2;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i=0; i<bufferSize; i++) data[i] = Math.random()*2-1;
+            noise.buffer = buffer;
+            noise.connect(gain);
+            gain.gain.setValueAtTime(0.5, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now+0.2);
+            noise.start();
+            noise.stop(now+0.2);
+            const osc = audioCtx.createOscillator();
+            osc.type = 'triangle';
+            osc.frequency.value = 180;
+            osc.connect(gain);
+            osc.start();
+            osc.stop(now+0.15);
+        } else if (soundType === 'hat') {
+            const noise = audioCtx.createBufferSource();
+            const bufferSize = audioCtx.sampleRate * 0.08;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i=0; i<bufferSize; i++) data[i] = Math.random()*2-1;
+            noise.buffer = buffer;
+            noise.connect(gain);
+            gain.gain.setValueAtTime(0.25, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now+0.1);
+            noise.start();
+            noise.stop(now+0.1);
+        } else if (soundType === 'clap') {
+            for(let i=0;i<3;i++) {
+                const noise = audioCtx.createBufferSource();
+                const bufferSize = audioCtx.sampleRate * 0.05;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i=0; i<bufferSize; i++) data[i] = Math.random()*2-1;
+                noise.buffer = buffer;
+                const g = audioCtx.createGain();
+                g.gain.setValueAtTime(0.3, now+i*0.02);
+                g.gain.exponentialRampToValueAtTime(0.01, now+i*0.02+0.1);
+                noise.connect(g);
+                g.connect(audioCtx.destination);
+                noise.start(now+i*0.02);
+                noise.stop(now+i*0.02+0.08);
+            }
+        } else if (soundType === 'openhat') {
+            const noise = audioCtx.createBufferSource();
+            const bufferSize = audioCtx.sampleRate * 0.3;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i=0; i<bufferSize; i++) data[i] = Math.random()*2-1;
+            noise.buffer = buffer;
+            noise.connect(gain);
+            gain.gain.setValueAtTime(0.4, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now+0.3);
+            noise.start();
+            noise.stop(now+0.3);
+        }
+    }
+
+    // Отрисовка всех треков в разных сетках
+    function renderAllTracks() {
+        renderHomeGrid();
+        renderWaveGrid();
+        renderPopularGrid();
+        renderLikesGrid();
+    }
+
+    function renderHomeGrid() {
+        const container = document.getElementById('homeGrid');
+        if(!container) return;
+        const randomTracks = [...tracks].sort(() => 0.5 - Math.random()).slice(0, 6);
+        container.innerHTML = randomTracks.map(tr => renderTrackCard(tr)).join('');
+        attachLikeEvents();
+        attachAudioPlayCounter();
+    }
+
+    function renderWaveGrid() {
+        const container = document.getElementById('waveGrid');
+        if(!container) return;
+        const shuffled = [...tracks].sort(() => 0.5 - Math.random());
+        container.innerHTML = shuffled.map(tr => renderTrackCard(tr)).join('');
+        attachLikeEvents();
+        attachAudioPlayCounter();
+    }
+
+    function renderPopularGrid() {
+        const container = document.getElementById('popularGrid');
+        if(!container) return;
+        const sorted = [...tracks].sort((a,b) => (b.playCount||0) - (a.playCount||0));
+        container.innerHTML = sorted.map(tr => renderTrackCard(tr)).join('');
+        attachLikeEvents();
+        attachAudioPlayCounter();
+    }
+
+    function renderLikesGrid() {
+        const container = document.getElementById('likesGrid');
+        if(!container) return;
+        const likedTracks = tracks.filter(t => likedTrackIds.has(t.id));
+        container.innerHTML = likedTracks.map(tr => renderTrackCard(tr)).join('');
+        attachLikeEvents();
+        attachAudioPlayCounter();
+    }
+
+    function renderTrackCard(track) {
+        const isLiked = likedTrackIds.has(track.id);
+        const coverHtml = (track.cover && track.cover.startsWith('http')) ? `<img src="${track.cover}" class="track-cover" style="object-fit:cover;">` : `<div class="track-cover">${track.cover || '🎵'}</div>`;
+        const audioHtml = track.audioDataUrl ? `<audio controls class="audio-player" src="${track.audioDataUrl}" data-track-id="${track.id}"></audio>` : '<div style="font-size:11px;">🎧 нет аудио</div>';
+        return `
+            <div class="track-card" data-id="${track.id}">
+                ${coverHtml}
+                <div class="track-title">${escapeHtml(track.title)}</div>
+                <div class="track-artist">${escapeHtml(track.artist)} ${track.album ? '• '+escapeHtml(track.album) : ''}</div>
+                ${audioHtml}
+                <button class="like-btn ${isLiked ? 'liked' : ''}" data-id="${track.id}">${isLiked ? '❤️' : '🤍'} ${isLiked ? 'Лайк' : 'Лайк'}</button>
+                <button class="delete-track" data-id="${track.id}">🗑️ Удалить</button>
+            </div>
+        `;
+    }
+
+    function attachLikeEvents() {
+        document.querySelectorAll('.like-btn').forEach(btn => {
+            btn.removeEventListener('click', likeHandler);
+            btn.addEventListener('click', likeHandler);
+        });
+        document.querySelectorAll('.delete-track').forEach(btn => {
+            btn.removeEventListener('click', deleteHandler);
+            btn.addEventListener('click', deleteHandler);
+        });
+    }
+    function likeHandler(e) {
+        const id = parseInt(e.currentTarget.dataset.id);
+        if(likedTrackIds.has(id)) likedTrackIds.delete(id);
+        else likedTrackIds.add(id);
+        saveLikesToLocal();
+        renderAllTracks();
+    }
+    function deleteHandler(e) {
+        const id = parseInt(e.currentTarget.dataset.id);
+        tracks = tracks.filter(t => t.id !== id);
+        likedTrackIds.delete(id);
+        saveDataToLocal();
+        renderAllTracks();
+        renderSampleLibraryUI();
+    }
+    function attachAudioPlayCounter() {
+        document.querySelectorAll('.audio-player').forEach(audio => {
+            audio.addEventListener('play', () => {
+                const trackId = parseInt(audio.dataset.trackId);
+                const track = tracks.find(t => t.id === trackId);
+                if(track) { track.playCount = (track.playCount || 0) + 1; saveDataToLocal(); renderPopularGrid(); }
+            });
+        });
+    }
+
+    function escapeHtml(str) { return String(str).replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+
+    // Сохранение и загрузка
+    function saveDataToLocal() {
+        localStorage.setItem('darkMusic_tracks_v2', JSON.stringify(tracks.map(t => ({...t, audioDataUrl: t.audioDataUrl}))));
+        localStorage.setItem('darkMusic_samples_v2', JSON.stringify(sampleLibrary));
+        saveLikesToLocal();
+    }
+    function saveLikesToLocal() { localStorage.setItem('darkMusic_likes', JSON.stringify([...likedTrackIds])); }
+    function loadFromLocal() {
+        const savedTracks = localStorage.getItem('darkMusic_tracks_v2');
+        if(savedTracks) tracks = JSON.parse(savedTracks);
+        else {
+            tracks = [
+                { id: 1001, title: 'Тени ночи', artist: 'DARK', album: 'Начало', cover: '🌙', audioDataUrl: null, playCount: 42 },
+                { id: 1002, title: 'Электрический сон', artist: 'FL Studio', album: 'Биты', cover: '⚡', audioDataUrl: null, playCount: 128 },
+                { id: 1003, title: 'Тёмный бит', artist: 'Producer X', album: 'Underground', cover: '🔊', audioDataUrl: null, playCount: 89 },
+                { id: 1004, title: 'Лунная соната (remix)', artist: 'DARK Orchestra', album: 'Classic', cover: '🌕', audioDataUrl: null, playCount: 56 }
+            ];
+        }
+        const savedSamples = localStorage.getItem('darkMusic_samples_v2');
+        if(savedSamples) sampleLibrary = JSON.parse(savedSamples);
+        const likesRaw = localStorage.getItem('darkMusic_likes');
+        if(likesRaw) likedTrackIds = new Set(JSON.parse(likesRaw));
+    }
+
+    // Студия: Step Sequencer UI
+    function buildStepSequencer() {
+        const container = document.getElementById('stepSequencerContainer');
+        if(!container) return;
+        const sounds = ['kick','snare','hat','clap'];
+        let html = '<table style="width:100%; border-collapse: collapse;"><tr><th></th>';
+        for(let i=0;i<8;i++) html+=`<th>${i+1}</th>`;
+        html+='</tr>';
+        sounds.forEach(sound => {
+            html+=`<tr><td><b>${sound.toUpperCase()}</b></td>`;
+            for(let s=0;s<8;s++) {
+                const active = stepPattern[sound][s];
+                html+=`<td><div class="step-btn ${active ? 'step-active' : ''}" data-sound="${sound}" data-step="${s}">${active ? '●' : '○'}</div></td>`;
+            }
+            html+=`</tr>`;
+        });
+        html+='</table>';
+        container.innerHTML = html;
+        document.querySelectorAll('.step-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const sound = btn.dataset.sound;
+                const step = parseInt(btn.dataset.step);
+                stepPattern[sound][step] = stepPattern[sound][step] ? 0 : 1;
+                buildStepSequencer();
+            });
+        });
+    }
+
+    function startPatternPlayback() {
+        if(isPlayingPattern) return;
+        isPlayingPattern = true;
+        currentStep = 0;
+        const bpm = parseInt(document.getElementById('flBpm').value) || 128;
+        const stepTime = (60 / bpm) * 0.5; // 8 шагов = 4 бита, каждая 1/8
+        if(patternInterval) clearInterval(patternInterval);
+        patternInterval = setInterval(() => {
+            if(!isPlayingPattern) return;
+            const sounds = ['kick','snare','hat','clap'];
+            sounds.forEach(sound => {
+                if(stepPattern[sound][currentStep]) playDrumSound(sound);
+            });
+            currentStep = (currentStep+1) % 8;
+        }, stepTime * 1000);
+    }
+
+    // Рендер библиотеки сэмплов
+    function renderSampleLibraryUI() {
+        const container = document.getElementById('flSampleLibraryList');
+        if(!container) return;
+        container.innerHTML = sampleLibrary.map(s => `<div class="sample-chip">🔊 ${escapeHtml(s.name)} <button class="playSampleBtn" data-id="${s.id}">▶</button> <button class="delSampleBtn" data-id="${s.id}">❌</button></div>`).join('');
+        document.querySelectorAll('.playSampleBtn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(btn.dataset.id);
+                const samp = sampleLibrary.find(s=>s.id===id);
+                if(samp && samp.audioDataUrl) new Audio(samp.audioDataUrl).play();
+            });
+        });
+        document.querySelectorAll('.delSampleBtn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(btn.dataset.id);
+                sampleLibrary = sampleLibrary.filter(s=>s.id!==id);
+                saveDataToLocal();
+                renderSampleLibraryUI();
+            });
+        });
+    }
+
+    // Инициализация студии
+    function initStudio() {
+        buildStepSequencer();
+        document.getElementById('playStepPattern').onclick = () => { initAudio(); startPatternPlayback(); };
+        document.getElementById('stopStepPattern').onclick = () => { isPlayingPattern=false; if(patternInterval) clearInterval(patternInterval); };
+        document.getElementById('clearStepPattern').onclick = () => { stepPattern = { kick:[0,0,0,0,0,0,0,0], snare:[0,0,0,0,0,0,0,0], hat:[0,0,0,0,0,0,0,0], clap:[0,0,0,0,0,0,0,0] }; buildStepSequencer(); };
+        document.querySelectorAll('.fl-pad').forEach(pad => {
+            pad.addEventListener('click', (e) => { initAudio(); playDrumSound(pad.dataset.sound); });
+        });
+        // Запись голоса
+        let localRecorder, localChunks;
+        document.getElementById('flStartRecord').onclick = async () => {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            localRecorder = new MediaRecorder(stream);
+            localChunks = [];
+            localRecorder.ondataavailable = e => localChunks.push(e.data);
+            localRecorder.onstop = () => {
+                recordedBlob = new Blob(localChunks, { type: 'audio/webm' });
+                document.getElementById('flVoiceStatus').innerHTML = '✅ Запись сохранена';
+                const url = URL.createObjectURL(recordedBlob);
+                document.getElementById('flPlayVoice').onclick = () => new Audio(url).play();
+            };
+            localRecorder.start();
+            document.getElementById('flVoiceStatus').innerHTML = '🔴 Запись...';
+            window._tempRec = localRecorder;
+        };
+        document.getElementById('flStopRecord').onclick = () => { if(window._tempRec && window._tempRec.state === 'recording') window._tempRec.stop(); };
+        document.getElementById('flSaveVoiceLib').onclick = () => {
+            if(recordedBlob) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    sampleLibrary.push({ id: Date.now(), name: `Вокал ${new Date().toLocaleTimeString()}`, audioDataUrl: e.target.result });
+                    saveDataToLocal();
+                    renderSampleLibraryUI();
+                };
+                reader.readAsDataURL(recordedBlob);
+            } else alert("Сначала запиши звук");
+        };
+        document.getElementById('flAddSampleBtn').onclick = () => {
+            const file = document.getElementById('flSampleUpload').files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    sampleLibrary.push({ id: Date.now(), name: file.name, audioDataUrl: ev.target.result });
+                    saveDataToLocal();
+                    renderSampleLibraryUI();
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+        document.getElementById('flCreateTrackBtn').onclick = () => {
+            const title = document.getElementById('newTrackTitle').value || "FL Studio трек";
+            const artist = document.getElementById('newTrackArtist').value || "DARK";
+            const album = document.getElementById('newTrackAlbum').value;
+            const cover = document.getElementById('newTrackCover').value || "🎛️";
+            tracks.unshift({ id: Date.now(), title, artist, album, cover, audioDataUrl: null, playCount: 0 });
+            saveDataToLocal();
+            renderAllTracks();
+            alert(`Трек "${title}" добавлен!`);
+        };
+    }
+
+    // Загрузка трека
+    document.getElementById('doUploadTrack')?.addEventListener('click', () => {
+        const title = document.getElementById('uploadTitle').value;
+        const artist = document.getElementById('uploadArtist').value;
+        const album = document.getElementById('uploadAlbum').value;
+        const cover = document.getElementById('uploadCover').value;
+        const file = document.getElementById('uploadAudioFile').files[0];
+        if(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                tracks.unshift({ id: Date.now(), title, artist, album, cover, audioDataUrl: e.target.result, playCount: 0 });
+                saveDataToLocal();
+                renderAllTracks();
+                alert("Трек загружен!");
+            };
+            reader.readAsDataURL(file);
+        } else {
+            tracks.unshift({ id: Date.now(), title, artist, album, cover, audioDataUrl: null, playCount: 0 });
+            saveDataToLocal();
+            renderAllTracks();
+            alert("Трек добавлен без аудио (загрузи позже)");
+        }
+    });
+
+    document.getElementById('refreshWaveBtn')?.addEventListener('click', () => renderWaveGrid());
+
+    // Навигация
+    document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+            btn.classList.add('active');
+            const pageId = btn.dataset.page;
+            document.querySelectorAll('.page').forEach(p=>p.classList.remove('active-page'));
+            document.getElementById(`${pageId}Page`).classList.add('active-page');
+            if(pageId === 'studio') initAudio();
+            if(pageId === 'mywave') renderWaveGrid();
+            if(pageId === 'popular') renderPopularGrid();
+            if(pageId === 'likes') renderLikesGrid();
+            if(pageId === 'home') renderHomeGrid();
+        });
+    });
+
+    loadFromLocal();
+    renderAllTracks();
+    initStudio();
+    renderSampleLibraryUI();
+</script>
+</body>
+</html>
